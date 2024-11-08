@@ -39,6 +39,10 @@
 
 #include "led.h"
 
+// Telemetry Includes
+#include "telemetry.h"
+#include "telemetry_task.h"
+
 /* ST includes */
 #include "stm32fxxx.h"
 
@@ -57,6 +61,9 @@ int main()
 
   //Launch the system task that will initialize and start everything
   systemLaunch();
+
+  // Initialize the telemetry task
+  telemetryTaskInit();
 
   //Start the FreeRTOS scheduler
   vTaskStartScheduler();
