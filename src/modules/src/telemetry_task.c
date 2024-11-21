@@ -12,7 +12,18 @@
 
 static void telemetryTask(void* parameters) {
     // Initialize CPX communication if not already initialized
+    //CPXPacket_t packet;
     TelemetryData_t telemetryData;
+    CPXRouting_t route;
+
+
+    //Initialize the route
+    cpxInitRoute(
+        CPX_T_STM32,       // Source: STM32 (Crazyflie)
+        CPX_T_ESP32,       // Destination: ESP32 (AI Deck)
+        CPX_F_APP,         // Function: Application-specific
+        &route
+    );
 
     while (1) {
         // Collect telemetry data
@@ -32,7 +43,13 @@ static void telemetryTask(void* parameters) {
                   telemetryData.pitch,
                   telemetryData.yaw);
 
-        // Prepare CPX packet
+        // // Prepare CPX packet
+        // packet.route = route;
+        // packet.route.lastPacket = true;  // Set to true if this is the last packet in a sequence
+        // packet.route.version = CPX_VERSION;  // Use the CPX version defined in cpx.h
+        // packet.dataLength = sizeof(TelemetryData_t);
+
+        
         // Delay before sending the next packet
         vTaskDelay(pdMS_TO_TICKS(100)); // Adjust the delay as needed
     }
@@ -62,7 +79,7 @@ static void cpxReceiveCallback(const CPXPacket_t* cpxRx) {
 void telemetryTaskInit() {
     DEBUG_PRINT("Initializing Telemetry Task...\n");
 
-    if (xTaskCreate(telemetryTask, "TelemetryTask", 200, NULL, tskIDLE_PRIORITY + 100, NULL) != pdPASS) {
+    if (xTaskCreate(telemetryTask, "TelemetryTask", 200, NULL, tskIDLE_PRIORITY + 1, NULL) != pdPASS) {
         DEBUG_PRINT("Failed to create Telemetry Task\n");
     } else {
         DEBUG_PRINT("Telemetry Task Created Successfully\n");
