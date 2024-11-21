@@ -62,9 +62,6 @@ int main()
   //Launch the system task that will initialize and start everything
   systemLaunch();
 
-  // Initialize the telemetry task
-  telemetryTaskInit();
-
   //Start the FreeRTOS scheduler
   vTaskStartScheduler();
 
@@ -72,6 +69,7 @@ int main()
   ledInit();
   ledSet(0, 1);
   ledSet(1, 1);
+
 
   //Should never reach this point!
   while(1);

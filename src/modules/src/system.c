@@ -77,6 +77,8 @@
   #include "cpxlink.h"
 #endif
 
+#include "telemetry_task.h"
+
 /* Private variable */
 static bool selftestPassed;
 static uint8_t dumpAssertInfo = 0;
@@ -212,6 +214,9 @@ void systemTask(void *arg)
   }
   soundInit();
   crtpMemInit();
+
+  // Initialize the telemetry task
+  telemetryTaskInit();
 
 #ifdef PROXIMITY_ENABLED
   proximityInit();
