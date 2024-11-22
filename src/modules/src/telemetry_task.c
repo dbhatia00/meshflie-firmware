@@ -56,20 +56,34 @@ static void telemetryTask(void* parameters) {
         memcpy(packet.data, &telemetryData, sizeof(TelemetryData_t));
 
         // Send the packet to ESP32
-        //if (!cpxSendPacketBlockingTimeout(&packet, 100)) {
-        //    DEBUG_PRINT("Failed to send telemetry data to ESP32\n");
-        //}
+        cpxSendPacketBlocking(&packet);
 
         // Delay before sending the next packet
         vTaskDelay(pdMS_TO_TICKS(100)); // Adjust the delay as needed
     }
 }
 
-void telemetryTaskInit() {
+// Callback to handle received telemetry data from other drones via ESP32
+static void cpxReceiveCallback(const CPXPacket_t* cpxRx) {
+    if (cpxRx->route.source == CPX_T_ESP32 && cpxRx->route.function == CPX_F_APP) {
+        TelemetryData_t receivedData;
+        if (cpxRx->dataLength == sizeof(TelemetryData_t)) {
+            memcpy(&receivedData, cpxRx->data, sizeof(TelemetryData_t));
 
-    // Get the drone ID
-    droneId = rand() % 100;
-    
+            // Process the received telemetry data from other drones
+            DEBUG_PRINT("Received telemetry from another drone: DroneID=%d, Voltage=%.2fV, Roll=%.2f°, Pitch=%.2f°, Yaw=%.2f°\n",
+                      receivedData.droneID,
+                      receivedData.batteryVoltage,
+                      receivedData.roll,
+                      receivedData.pitch,
+                      receivedData.yaw);
+        } else {
+            DEBUG_PRINT("Received data of unexpected length: %d\n", cpxRx->dataLength);
+        }
+    }
+}
+
+void telemetryTaskInit() {
     DEBUG_PRINT("Initializing Telemetry Task...\n");
 
     if (xTaskCreate(telemetryTask, "TelemetryTask", 200, NULL, tskIDLE_PRIORITY + 1, NULL) != pdPASS) {
@@ -77,4 +91,7 @@ void telemetryTaskInit() {
     } else {
         DEBUG_PRINT("Telemetry Task Created Successfully\n");
     }
+
+    // Register the callback to handle incoming CPX packets from ESP32
+    cpxRegisterAppMessageHandler(cpxReceiveCallback);
 }
