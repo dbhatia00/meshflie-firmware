@@ -6,9 +6,12 @@
 #include "log.h"
 #include "telemetry.h"
 #include "cpx_internal_router.h"
-
+#include "system.h"       // For getting drone ID
+#include <stdlib.h>
 #include "debug.h"
 #define DEBUG_MODULE "TELEMTASK"
+
+uint8_t droneId;
 
 static void telemetryTask(void* parameters) {
     // Initialize CPX communication if not already initialized
@@ -16,8 +19,7 @@ static void telemetryTask(void* parameters) {
     TelemetryData_t telemetryData;
     CPXRouting_t route;
 
-
-    //Initialize the route
+    // Initialize the route
     cpxInitRoute(
         CPX_T_STM32,       // Source: STM32 (Crazyflie)
         CPX_T_ESP32,       // Destination: ESP32 (AI Deck)
@@ -35,48 +37,39 @@ static void telemetryTask(void* parameters) {
         telemetryData.yaw = yaw;
         
         telemetryData.batteryVoltage = pmGetBatteryVoltage();
+        telemetryData.droneID = droneId;
         
-            // Process the received telemetry data
-        DEBUG_PRINT("Telemetry: Packaging Values: Voltage=%.2fV, Roll=%.2f°, Pitch=%.2f°, Yaw=%.2f°\n",
+        // Process the telemetry data
+        DEBUG_PRINT("Telemetry: Packaging Values: DroneID=%d, Voltage=%.2fV, Roll=%.2f°, Pitch=%.2f°, Yaw=%.2f°\n",
+                  telemetryData.droneID,
                   telemetryData.batteryVoltage,
                   telemetryData.roll,
                   telemetryData.pitch,
                   telemetryData.yaw);
 
-        // // Prepare CPX packet
-        // packet.route = route;
-        // packet.route.lastPacket = true;  // Set to true if this is the last packet in a sequence
-        // packet.route.version = CPX_VERSION;  // Use the CPX version defined in cpx.h
-        // packet.dataLength = sizeof(TelemetryData_t);
+        // Prepare CPX packet
+        CPXPacket_t packet;
+        packet.route = route;
+        packet.route.lastPacket = true;  // Set to true if this is the last packet in a sequence
+        packet.route.version = CPX_VERSION;  // Use the CPX version defined in cpx.h
+        packet.dataLength = sizeof(TelemetryData_t);
+        memcpy(packet.data, &telemetryData, sizeof(TelemetryData_t));
 
-        
+        // Send the packet to ESP32
+        //if (!cpxSendPacketBlockingTimeout(&packet, 100)) {
+        //    DEBUG_PRINT("Failed to send telemetry data to ESP32\n");
+        //}
+
         // Delay before sending the next packet
         vTaskDelay(pdMS_TO_TICKS(100)); // Adjust the delay as needed
     }
 }
-/*
-static void cpxReceiveCallback(const CPXPacket_t* cpxRx) {
-    if (cpxRx->route.source == CPX_T_ESP32 && cpxRx->route.function == CPX_F_APP) {
-        TelemetryData_t receivedData;
-        if (cpxRx->dataLength == sizeof(TelemetryData_t)) {
-            memcpy(&receivedData, cpxRx->data, sizeof(TelemetryData_t));
 
-            // Process the received telemetry data
-            DEBUG_PRINT("Telemetry: Received from another drone: Voltage=%.2fV, Roll=%.2f°, Pitch=%.2f°, Yaw=%.2f°\n",
-                  receivedData.batteryVoltage,
-                  receivedData.roll,
-                  receivedData.pitch,
-                  receivedData.yaw);
-
-            // Can embed commands here! May wanna enact a storage mechanism?
-
-        } else {
-            consolePrintf("Telemetry Received data of unexpected length: %d", cpxRx->dataLength);
-        }
-    }
-}
-*/
 void telemetryTaskInit() {
+
+    // Get the drone ID
+    droneId = rand() % 100;
+    
     DEBUG_PRINT("Initializing Telemetry Task...\n");
 
     if (xTaskCreate(telemetryTask, "TelemetryTask", 200, NULL, tskIDLE_PRIORITY + 1, NULL) != pdPASS) {
