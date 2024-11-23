@@ -11,7 +11,7 @@
 #include "debug.h"
 #define DEBUG_MODULE "TELEMTASK"
 
-uint8_t droneId;
+uint8_t droneId = 40;
 
 static void telemetryTask(void* parameters) {
     // Initialize CPX communication if not already initialized
@@ -48,7 +48,7 @@ static void telemetryTask(void* parameters) {
                   telemetryData.pitch,
                   telemetryData.yaw);
         */
-       
+
         // Prepare CPX packet
         CPXPacket_t packet;
         packet.route = route;
@@ -86,7 +86,6 @@ static void cpxReceiveCallback(const CPXPacket_t* cpxRx) {
 }
 
 void telemetryTaskInit() {
-    droneId = rand() % 100;
 
     DEBUG_PRINT("Initializing Telemetry Task...\n");
 

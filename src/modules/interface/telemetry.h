@@ -6,7 +6,7 @@
 #include <stdint.h>
 
 typedef struct {
-    int droneID;
+    uint8_t droneID;
     double batteryVoltage;
     double roll;
     double pitch;
