@@ -40,13 +40,15 @@ static void telemetryTask(void* parameters) {
         telemetryData.droneID = droneId;
         
         // Process the telemetry data
+        /*
         DEBUG_PRINT("Telemetry: Packaging Values: DroneID=%d, Voltage=%.2fV, Roll=%.2f°, Pitch=%.2f°, Yaw=%.2f°\n",
                   telemetryData.droneID,
                   telemetryData.batteryVoltage,
                   telemetryData.roll,
                   telemetryData.pitch,
                   telemetryData.yaw);
-
+        */
+       
         // Prepare CPX packet
         CPXPacket_t packet;
         packet.route = route;
@@ -84,6 +86,8 @@ static void cpxReceiveCallback(const CPXPacket_t* cpxRx) {
 }
 
 void telemetryTaskInit() {
+    droneId = rand() % 100;
+
     DEBUG_PRINT("Initializing Telemetry Task...\n");
 
     if (xTaskCreate(telemetryTask, "TelemetryTask", 200, NULL, tskIDLE_PRIORITY + 1, NULL) != pdPASS) {
