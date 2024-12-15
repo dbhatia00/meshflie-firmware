@@ -11,15 +11,14 @@
 #include "debug.h"
 #define DEBUG_MODULE "TELEMTASK"
 
-uint8_t droneId = 40;
+// Change depending on drone radio ID
+uint8_t droneId = 13;
 
+// Generate + Send telemetry packets to esp32 
 static void telemetryTask(void* parameters) {
-    // Initialize CPX communication if not already initialized
-    //CPXPacket_t packet;
     TelemetryData_t telemetryData;
     CPXRouting_t route;
 
-    // Initialize the route
     cpxInitRoute(
         CPX_T_STM32,       // Source: STM32 (Crazyflie)
         CPX_T_ESP32,       // Destination: ESP32 (AI Deck)
@@ -38,22 +37,12 @@ static void telemetryTask(void* parameters) {
         
         telemetryData.batteryVoltage = pmGetBatteryVoltage();
         telemetryData.droneID = droneId;
-        
-        // Process the telemetry data
-        /*
-        DEBUG_PRINT("Telemetry: Packaging Values: DroneID=%d, Voltage=%.2fV, Roll=%.2f°, Pitch=%.2f°, Yaw=%.2f°\n",
-                  telemetryData.droneID,
-                  telemetryData.batteryVoltage,
-                  telemetryData.roll,
-                  telemetryData.pitch,
-                  telemetryData.yaw);
-        */
 
         // Prepare CPX packet
         CPXPacket_t packet;
         packet.route = route;
-        packet.route.lastPacket = true;  // Set to true if this is the last packet in a sequence
-        packet.route.version = CPX_VERSION;  // Use the CPX version defined in cpx.h
+        packet.route.lastPacket = true; 
+        packet.route.version = CPX_VERSION; 
         packet.dataLength = sizeof(TelemetryData_t);
         memcpy(packet.data, &telemetryData, sizeof(TelemetryData_t));
 
@@ -61,7 +50,7 @@ static void telemetryTask(void* parameters) {
         cpxSendPacketBlocking(&packet);
 
         // Delay before sending the next packet
-        vTaskDelay(pdMS_TO_TICKS(100)); // Adjust the delay as needed
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 
@@ -85,6 +74,7 @@ static void cpxReceiveCallback(const CPXPacket_t* cpxRx) {
     }
 }
 
+// Task initializer
 void telemetryTaskInit() {
 
     DEBUG_PRINT("Initializing Telemetry Task...\n");
